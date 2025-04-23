@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 
 interface GridItem {
     id: number;
