@@ -1,82 +1,80 @@
 <template>
-    <h1>
-        Show all items with property<span class="property-span">show = true</span>on the screen.
-    </h1>
-    <div class="item-container"></div>
+    <h1>Improve search performance</h1>
+    <div>
+        <h2>Search Items</h2>
+        <input
+            v-model="searchQuery"
+            placeholder="Search..."
+        />
+        <div>
+            <p>
+                Render Time: <strong>{{ renderTime }} ms</strong>
+            </p>
+            <p style="margin-bottom: 2rem">Total: {{ getFilteredItems().length }}</p>
+            <p
+                v-for="item in getFilteredItems()"
+                :key="item.id"
+            >
+                {{ item.name }}
+            </p>
+        </div>
+    </div>
 </template>
 
-<script setup lang="ts">
-import { onMounted, ref } from "vue";
+<script lang="ts" setup>
+import { ref, watchEffect } from "vue";
 
-interface Item {
+interface Person {
     id: number;
-    show: boolean;
+    name: string;
 }
 
-const itemsLength = 1000;
+const searchQuery = ref("");
 
-const items = ref<Item[]>([]);
+const adjectives = ["Sneaky", "Happy", "Loud", "Ancient", "Tiny", "Glorious", "Wobbly"];
+const firstNames = ["Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace"];
+const nouns = ["Banana", "Spaceship", "Tiger", "Cupcake", "Keyboard", "Unicorn"];
 
-function generateItemShowList() {
-    const showList = [];
-    for (let i = 0; i < itemsLength; i++) {
-        showList.push(Math.random() < 0.1);
-    }
-    return showList;
+function getRandomElement<T>(arr: T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function generateItems() {
-    const showList = generateItemShowList();
-    const itemArray: Item[] = [];
-
-    for (let i = 0; i < itemsLength; i++) {
-        itemArray.push({
+const items = ref<Person[]>(
+    Array.from({ length: 500 }, (_, i) => {
+        const name = `${getRandomElement(adjectives)} ${getRandomElement(firstNames)}'s ${getRandomElement(nouns)}`;
+        return {
             id: i,
-            show: showList[i],
-        });
-    }
+            name,
+        };
+    }),
+);
 
-    items.value = itemArray;
+function expensiveFilter(person: Person): boolean {
+    const now = performance.now();
+    while (performance.now() - now < 0.2) {} // Block ~0.2ms
+    return person.name.includes(searchQuery.value);
 }
 
-function startUpdatingItemShowListPeriodically(): void {
-    setInterval(() => {
-        const showList = generateItemShowList();
-        for (let i = 0; i < items.value.length; i++) {
-            items.value[i].show = showList[i];
-        }
-    }, 1);
+function getFilteredItems(): Person[] {
+    return items.value.filter((person) => expensiveFilter(person));
 }
 
-// Call the function to populate the ref
-onMounted(() => {
-    generateItems();
-    startUpdatingItemShowListPeriodically();
+// Speed test
+const renderTime = ref(0);
+watchEffect(() => {
+    const start = performance.now();
+
+    const filteredItem = getFilteredItems()[0];
+    console.log(filteredItem);
+
+    const end = performance.now();
+    renderTime.value = +(end - start).toFixed(2);
 });
 </script>
 
 <style scoped>
 h1 {
     text-align: center;
-    margin-bottom: 1rem;
-}
-
-.property-span {
-    font-family: monospace;
-    margin: 0.5rem;
-    padding: 0 0.5rem;
-    background-color: rgba(128, 128, 128, 0.38);
-    border-radius: 3px;
-}
-
-.item-container {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.item {
-    background-color: rgba(128, 128, 128, 0.19);
-    margin: 1rem;
-    width: 100px;
+    margin-bottom: 2rem;
 }
 </style>
